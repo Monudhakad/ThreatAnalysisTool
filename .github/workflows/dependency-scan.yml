@@ -1,0 +1,37 @@
+name: Vulnerability Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "scaffold" ]
+  pull_request:
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK (for dependency-check)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run OWASP Dependency-Check (action)
+        uses: dependency-check/dependency-check-action@v1
+        with:
+          # scan the whole repo
+          scan: . 
+          format: 'JSON'
+          output_directory: 'workspace/output'
+        env:
+          # optional: NVD API key (avoid rate limits)
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+      - name: Upload JSON artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-json
+          path: workspace/output/dependency-check-report.json
